@@ -1,0 +1,32 @@
+# Demo stack: PostgreSQL + MiniERP. Credentials below are for local demo use only.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: minierp
+      POSTGRES_USER: minierp
+      POSTGRES_PASSWORD: minierp
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U minierp -d minierp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=minierp;Username=minierp;Password=minierp"
+      Seed__AdminPassword: "Admin123"
+      Seed__DemoUserPassword: "Demo123"
+      Seed__ShowDemoCredentials: "true"
+
+volumes:
+  pgdata:
