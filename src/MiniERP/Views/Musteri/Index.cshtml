@@ -1,0 +1,112 @@
+@model IEnumerable<MiniERP.Entities.Musteri>
+
+@{
+    ViewData["Title"] = "Customers";
+    ViewData["HidePageHeader"] = true;
+    var siparisSayilari = ViewBag.SiparisSayilari as Dictionary<int, int> ?? new();
+}
+
+<div class="list-hero">
+    <div>
+        <span class="list-eyebrow">Customer management</span>
+        <h2>Customers</h2>
+        <p>Manage customer contact details and track records used in the sales process.</p>
+    </div>
+    <a href="/Musteri/Create" class="btn btn-primary">
+        <i class="fas fa-plus mr-1"></i> New Customer
+    </a>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="card list-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="musteriTable" class="table app-table">
+                <thead>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Address</th>
+                        <th>Orders</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var musteri in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="entity-main">@musteri.AdSoyad</span>
+                                <span class="entity-sub">#@musteri.Id</span>
+                            </td>
+                            <td>@musteri.Email</td>
+                            <td>@musteri.Telefon</td>
+                            <td>@musteri.Adres</td>
+                            <td>@siparisSayilari.GetValueOrDefault(musteri.Id)</td>
+                            <td>
+                                <div class="table-actions">
+                                    <a href="/Musteri/Edit/@musteri.Id" class="btn btn-warning icon-btn" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form asp-action="Delete" method="post" class="delete-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@musteri.Id" />
+                                        <button type="submit" class="btn btn-danger icon-btn"
+                                                title="@(siparisSayilari.ContainsKey(musteri.Id) ? "Customers with orders cannot be deleted" : "Delete")"
+                                                @(siparisSayilari.ContainsKey(musteri.Id) ? "disabled" : "")>
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css">
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap4.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#musteriTable').DataTable({
+            order: [],
+            language: window.miniErpDataTableLanguage
+        });
+    });
+
+    document.querySelectorAll('.delete-form').forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'This customer will be permanently deleted.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+</script>
+}

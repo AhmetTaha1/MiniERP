@@ -1,0 +1,155 @@
+@model MiniERP.Entities.Fatura
+
+@{
+    ViewData["Title"] = "Invoice Details";
+    ViewData["HidePageHeader"] = true;
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="detail-hero">
+    <div>
+        <span class="list-eyebrow">Invoice details</span>
+        <h2>@Model.FaturaNo</h2>
+        <p>Line and payment details for the invoice issued to @Model.Siparis.Musteri.AdSoyad.</p>
+    </div>
+    <div class="detail-actions">
+        <a href="/Fatura" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left mr-1"></i> Back
+        </a>
+        <a href="/Fatura/Pdf/@Model.Id" class="btn btn-primary">
+            <i class="fas fa-file-pdf mr-1"></i> Download PDF
+        </a>
+        <button onclick="window.print()" class="btn btn-outline-primary">
+            <i class="fas fa-print mr-1"></i> Print
+        </button>
+    </div>
+</div>
+
+<div class="detail-summary-grid">
+    <div class="detail-summary-card">
+        <span>Invoice No</span>
+        <strong>@Model.FaturaNo</strong>
+        <small>@Model.FaturaTarihi.ToString("dd.MM.yyyy HH:mm")</small>
+    </div>
+    <div class="detail-summary-card">
+        <span>Customer</span>
+        <strong>@Model.Siparis.Musteri.AdSoyad</strong>
+        <small>@Model.Siparis.Musteri.Email</small>
+    </div>
+    <div class="detail-summary-card">
+        <span>Payment</span>
+        <strong>
+            @if (Model.OdenmeDurumu)
+            {
+                <span class="badge badge-success durum-pill">Paid</span>
+            }
+            else
+            {
+                <span class="badge badge-danger durum-pill">Unpaid</span>
+            }
+        </strong>
+        <small>Order #@Model.SiparisId</small>
+    </div>
+    <div class="detail-summary-card">
+        <span>Total</span>
+        <strong>@DisplayText.Money(Model.ToplamTutar)</strong>
+        <small>@Model.Siparis.SiparisDetaylar.Count product lines</small>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card detail-card">
+            <div class="card-header">
+                <h3 class="card-title">Party Information</h3>
+            </div>
+            <div class="card-body">
+                <h5 class="detail-section-title">MiniERP Company</h5>
+                <div class="detail-info-line"><i class="fas fa-map-marker-alt"></i><span>Turkey</span></div>
+                <div class="detail-info-line"><i class="fas fa-envelope"></i><span>info@minierp.com</span></div>
+                <hr />
+                <h5 class="detail-section-title">Billed To</h5>
+                <div class="detail-info-line"><i class="fas fa-user"></i><span>@Model.Siparis.Musteri.AdSoyad</span></div>
+                <div class="detail-info-line"><i class="fas fa-phone"></i><span>@Model.Siparis.Musteri.Telefon</span></div>
+                <div class="detail-info-line"><i class="fas fa-map-marker-alt"></i><span>@Model.Siparis.Musteri.Adres</span></div>
+            </div>
+        </div>
+
+        <div class="card detail-card">
+            <div class="card-body">
+                <form asp-action="OdemeDurumDegistir" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <input type="hidden" name="detay" value="true" />
+                    @if (!Model.OdenmeDurumu)
+                    {
+                        <button type="submit" class="btn btn-success btn-block">
+                            <i class="fas fa-check mr-1"></i> Mark as Paid
+                        </button>
+                    }
+                    else
+                    {
+                        if (Model.Siparis.Durum == SiparisDurumu.Tamamlandi)
+                        {
+                            <button type="button" class="btn btn-secondary btn-block" disabled>
+                                <i class="fas fa-lock mr-1"></i> Completed Order
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="submit" class="btn btn-danger btn-block">
+                                <i class="fas fa-times mr-1"></i> Mark as Unpaid
+                            </button>
+                        }
+                    }
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card list-card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table app-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th class="text-right">Unit Price</th>
+                                <th class="text-center">Quantity</th>
+                                <th class="text-right">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var detay in Model.Siparis.SiparisDetaylar)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="entity-main">@detay.Urun.Ad</span>
+                                        <span class="entity-sub">@detay.Urun.Kategori.Ad</span>
+                                    </td>
+                                    <td class="text-right">@DisplayText.Money(detay.BirimFiyat)</td>
+                                    <td class="text-center">@detay.Miktar</td>
+                                    <td class="text-right">@DisplayText.Money(detay.BirimFiyat * detay.Miktar)</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-right"><strong>Grand Total</strong></td>
+                                <td class="text-right"><strong>@DisplayText.Money(Model.ToplamTutar)</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

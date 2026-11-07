@@ -1,0 +1,191 @@
+@model IEnumerable<MiniERP.Entities.Fatura>
+
+@{
+    ViewData["Title"] = "Invoices";
+    ViewData["HidePageHeader"] = true;
+    bool? odenmeDurumu = ViewBag.OdenmeDurumu as bool?;
+    DateTime? baslangicTarihi = ViewBag.BaslangicTarihi as DateTime?;
+    DateTime? bitisTarihi = ViewBag.BitisTarihi as DateTime?;
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="list-hero">
+    <div>
+        <span class="list-eyebrow">Accounting</span>
+        <h2>Invoices</h2>
+        <p>Review issued invoices, payment statuses, and collection actions in current order.</p>
+    </div>
+</div>
+
+<div class="card list-card mb-3">
+    <div class="card-body filter-body">
+        <form method="get" class="filter-grid">
+            <div>
+                <label>Payment Status</label>
+                <select name="odenmeDurumu" class="form-control">
+                    <option value="">All invoices</option>
+                    <option value="true" selected="@(odenmeDurumu == true)">Paid</option>
+                    <option value="false" selected="@(odenmeDurumu == false)">Unpaid</option>
+                </select>
+            </div>
+            <div>
+                <label>Start</label>
+                <input type="date" name="baslangicTarihi" value="@baslangicTarihi?.ToString("yyyy-MM-dd")" class="form-control" />
+            </div>
+            <div>
+                <label>End</label>
+                <input type="date" name="bitisTarihi" value="@bitisTarihi?.ToString("yyyy-MM-dd")" class="form-control" />
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-filter mr-1"></i> Filter</button>
+                <a href="/Fatura" class="btn btn-outline-secondary"><i class="fas fa-undo mr-1"></i> Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card list-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="faturaTable" class="table app-table">
+                <thead>
+                    <tr>
+                        <th>Invoice</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Payment</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var fatura in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="entity-main">@fatura.FaturaNo</span>
+                                <span class="entity-sub">Order #@fatura.SiparisId</span>
+                            </td>
+                            <td>@fatura.Siparis.Musteri.AdSoyad</td>
+                            <td>@fatura.FaturaTarihi.ToString("dd.MM.yyyy HH:mm")</td>
+                            <td>@DisplayText.Money(fatura.ToplamTutar)</td>
+                            <td>
+                                @if (fatura.OdenmeDurumu)
+                                {
+                                    <span class="badge badge-success durum-pill">Paid</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-danger durum-pill">Unpaid</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <a href="/Fatura/Detay/@fatura.Id" class="btn btn-info icon-btn" title="Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <form asp-action="OdemeDurumDegistir" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@fatura.Id" />
+                                        @if (fatura.OdenmeDurumu)
+                                        {
+                                            if (fatura.Siparis.Durum == SiparisDurumu.Tamamlandi)
+                                            {
+                                                <button type="button" class="btn btn-light icon-btn" title="Payment cannot be reversed for a completed order" disabled>
+                                                    <i class="fas fa-lock"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="submit" class="btn btn-danger icon-btn" title="Mark as unpaid">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="btn btn-success icon-btn" title="Mark as paid">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        }
+                                    </form>
+                                    @if (fatura.OdenmeDurumu)
+                                    {
+                                        <button type="button" class="btn btn-light icon-btn paid-delete-warning" title="Paid invoices cannot be deleted">
+                                            <i class="fas fa-lock"></i>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="Delete" method="post" class="delete-form">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@fatura.Id" />
+                                            <button type="submit" class="btn btn-danger icon-btn" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css">
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap4.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#faturaTable').DataTable({
+            order: [],
+            language: window.miniErpDataTableLanguage
+        });
+    });
+
+    document.querySelectorAll('.delete-form').forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'This invoice will be permanently deleted.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+
+    document.querySelectorAll('.paid-delete-warning').forEach(function(button) {
+        button.addEventListener('click', function() {
+            Swal.fire({
+                title: 'Invoice cannot be deleted',
+                text: 'Paid invoices cannot be deleted to preserve record integrity. Reverse the payment status first if needed.',
+                icon: 'warning',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'OK'
+            });
+        });
+    });
+</script>
+}

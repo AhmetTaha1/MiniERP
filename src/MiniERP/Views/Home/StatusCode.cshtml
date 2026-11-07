@@ -1,0 +1,15 @@
+@{
+    var code = ViewBag.Code as int? ?? 404;
+    ViewData["Title"] = code == 404 ? "Page Not Found" : "Error";
+    ViewData["HidePageHeader"] = true;
+}
+
+<div class="card form-card text-center py-5">
+    <div class="card-body">
+        <h1 class="display-4 mb-3">@code</h1>
+        <p class="lead text-muted mb-4">
+            @(code == 404 ? "The page or record you are looking for could not be found." : "Something went wrong while processing your request.")
+        </p>
+        <a href="/" class="btn btn-primary"><i class="fas fa-home mr-1"></i> Back to Dashboard</a>
+    </div>
+</div>

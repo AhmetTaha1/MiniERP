@@ -1,0 +1,118 @@
+@model MiniERP.Entities.Siparis
+
+@{
+    ViewData["Title"] = "Order Details";
+    ViewData["HidePageHeader"] = true;
+    var faturaVarMi = Model.Fatura != null;
+}
+
+<div class="detail-hero">
+    <div>
+        <span class="list-eyebrow">Order details</span>
+        <h2>Order #@Model.Id</h2>
+        <p>Product, amount, and status details for the order created for @Model.Musteri.AdSoyad.</p>
+    </div>
+    <div class="detail-actions">
+        @if (!faturaVarMi && Model.Durum != SiparisDurumu.Iptal && (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Muhasebe)))
+        {
+            <form asp-controller="Fatura" asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="siparisId" value="@Model.Id" />
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-file-invoice mr-1"></i> Create Invoice
+                </button>
+            </form>
+        }
+        @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Satis))
+        {
+            <a href="/Siparis/Durum/@Model.Id" class="btn btn-primary">
+                <i class="fas fa-exchange-alt mr-1"></i> Change Status
+            </a>
+        }
+        <a href="/Siparis" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left mr-1"></i> Back
+        </a>
+    </div>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<div class="detail-summary-grid">
+    <div class="detail-summary-card">
+        <span>Customer</span>
+        <strong>@Model.Musteri.AdSoyad</strong>
+        <small>@Model.Musteri.Email</small>
+    </div>
+    <div class="detail-summary-card">
+        <span>Status</span>
+        <strong><span class="badge @DisplayText.OrderStatusBadge(Model.Durum) durum-pill">@DisplayText.OrderStatus(Model.Durum)</span></strong>
+        <small>@Model.SiparisTarihi.ToString("dd.MM.yyyy HH:mm")</small>
+    </div>
+    <div class="detail-summary-card">
+        <span>Total</span>
+        <strong>@DisplayText.Money(Model.ToplamTutar)</strong>
+        <small>@Model.SiparisDetaylar.Count product lines</small>
+    </div>
+    <div class="detail-summary-card">
+        <span>Invoice</span>
+        <strong>@(faturaVarMi ? "Created" : "Pending")</strong>
+        <small>@(Model.Durum == SiparisDurumu.Iptal ? "Canceled order" : "Invoice check")</small>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card detail-card">
+            <div class="card-header">
+                <h3 class="card-title">Customer Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="detail-info-line"><i class="fas fa-envelope"></i><span>@Model.Musteri.Email</span></div>
+                <div class="detail-info-line"><i class="fas fa-phone"></i><span>@Model.Musteri.Telefon</span></div>
+                <div class="detail-info-line"><i class="fas fa-map-marker-alt"></i><span>@Model.Musteri.Adres</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card list-card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table app-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Unit Price</th>
+                                <th>Quantity</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var detay in Model.SiparisDetaylar)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="entity-main">@detay.Urun.Ad</span>
+                                        <span class="entity-sub">@detay.Urun.Kategori.Ad</span>
+                                    </td>
+                                    <td>@DisplayText.Money(detay.BirimFiyat)</td>
+                                    <td>@detay.Miktar</td>
+                                    <td>@DisplayText.Money(detay.BirimFiyat * detay.Miktar)</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-right"><strong>Grand Total</strong></td>
+                                <td><strong>@DisplayText.Money(Model.ToplamTutar)</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,116 @@
+@model IEnumerable<MiniERP.Entities.Urun>
+
+@{
+    ViewData["Title"] = "Products";
+    ViewData["HidePageHeader"] = true;
+}
+
+<div class="list-hero">
+    <div>
+        <span class="list-eyebrow">Stock management</span>
+        <h2>Products & Stock</h2>
+        <p>Manage active products, categories, prices, and stock levels from one list.</p>
+    </div>
+    <div class="list-actions">
+        <a href="/Kategori" class="btn btn-outline-primary">
+            <i class="fas fa-tags mr-1"></i> Categories
+        </a>
+        <a href="/Urun/Create" class="btn btn-primary">
+            <i class="fas fa-plus mr-1"></i> New Product
+        </a>
+    </div>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="card list-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="urunTable" class="table app-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var urun in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="entity-main">@urun.Ad</span>
+                                <span class="entity-sub">#@urun.Id</span>
+                            </td>
+                            <td><span class="badge badge-light durum-pill">@urun.Kategori.Ad</span></td>
+                            <td>@DisplayText.Money(urun.Fiyat)</td>
+                            <td>
+                                <span class="badge @(urun.StokAdedi <= 5 ? "badge-danger" : "badge-success") durum-pill">
+                                    @urun.StokAdedi units
+                                </span>
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <a href="/Urun/Edit/@urun.Id" class="btn btn-warning icon-btn" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form asp-action="Delete" method="post" class="delete-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@urun.Id" />
+                                        <button type="submit" class="btn btn-danger icon-btn" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css">
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap4.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#urunTable').DataTable({
+            order: [],
+            language: window.miniErpDataTableLanguage
+        });
+    });
+
+    document.querySelectorAll('.delete-form').forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'If it is not used in an active order, the product will be removed from the list and historical records will be kept.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, remove',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+</script>
+}

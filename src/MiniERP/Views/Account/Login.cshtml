@@ -1,0 +1,98 @@
+@model MiniERP.Models.LoginViewModel
+@using Microsoft.Extensions.Options
+@inject IOptions<SeedOptions> SeedOptions
+
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Sign In";
+}
+
+<main class="auth-shell">
+    <section class="auth-brand-panel">
+        <div class="auth-brand-content">
+            <a href="/" class="auth-logo"><b>Mini</b>ERP</a>
+            <h1>Manage business operations from one panel.</h1>
+            <p>Authorized access for stock, order, customer, and invoice operations.</p>
+            <div class="auth-feature-list">
+                <span><i class="fas fa-box"></i> Stock management</span>
+                <span><i class="fas fa-shopping-cart"></i> Order tracking</span>
+                <span><i class="fas fa-file-invoice-dollar"></i> Invoice control</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="auth-form-panel">
+        <div class="auth-form-card">
+            <div class="auth-form-header">
+                <span class="auth-form-icon"><i class="fas fa-lock"></i></span>
+                <div>
+                    <h2>Sign In</h2>
+                    <p>Access the MiniERP management panel.</p>
+                </div>
+            </div>
+
+            <form asp-action="Login" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                <div class="form-group">
+                    <label asp-for="Email"></label>
+                    <div class="auth-input-wrap">
+                        <i class="fas fa-envelope"></i>
+                        <input asp-for="Email" class="form-control" autocomplete="username" placeholder="Enter your email" />
+                    </div>
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Password"></label>
+                    <div class="auth-input-wrap">
+                        <i class="fas fa-key"></i>
+                        <input asp-for="Password" class="form-control" autocomplete="current-password" placeholder="Enter your password" id="passwordInput" />
+                        <button type="button" class="password-toggle" id="passwordToggle" aria-label="Show password">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+
+                <div class="auth-options">
+                    <div class="form-check">
+                        <input asp-for="RememberMe" class="form-check-input" />
+                        <label asp-for="RememberMe" class="form-check-label"></label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary auth-submit-btn">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+            </form>
+
+            @if (SeedOptions.Value.ShowDemoCredentials)
+            {
+                <div class="demo-credentials mt-4">
+                    <strong><i class="fas fa-info-circle mr-1"></i> Demo accounts</strong>
+                    <div class="mt-2">Admin: <code>@SeedOptions.Value.AdminEmail</code> / <code>@SeedOptions.Value.AdminPassword</code></div>
+                    <div>Sales / Stock / Accounting / Manager: <code>sales@minierp.com</code>, <code>stock@minierp.com</code>, <code>accounting@minierp.com</code>, <code>manager@minierp.com</code> / <code>@SeedOptions.Value.DemoUserPassword</code></div>
+                </div>
+            }
+        </div>
+    </section>
+</main>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.getElementById('passwordToggle')?.addEventListener('click', function () {
+            const input = document.getElementById('passwordInput');
+            const icon = this.querySelector('i');
+            const isHidden = input.type === 'password';
+
+            input.type = isHidden ? 'text' : 'password';
+            this.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+            icon.classList.toggle('fa-eye', !isHidden);
+            icon.classList.toggle('fa-eye-slash', isHidden);
+        });
+    </script>
+}

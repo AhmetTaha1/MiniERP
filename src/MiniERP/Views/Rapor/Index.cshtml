@@ -1,0 +1,356 @@
+@model MiniERP.Models.RaporViewModel
+
+@{
+    ViewData["Title"] = "Reports";
+    ViewData["HidePageHeader"] = true;
+    var baslangicRoute = Model.BaslangicTarihi?.ToString("yyyy-MM-dd");
+    var bitisRoute = Model.BitisTarihi?.ToString("yyyy-MM-dd");
+}
+
+<div class="report-hero">
+    <div>
+        <span class="report-eyebrow">Management reports</span>
+        <h2>Sales, stock, and customer performance</h2>
+        <p>Review operational data by selected date range and category on one screen.</p>
+    </div>
+    <div class="report-actions">
+        <a class="btn btn-outline-primary"
+           asp-action="Pdf"
+           asp-route-baslangicTarihi="@baslangicRoute"
+           asp-route-bitisTarihi="@bitisRoute"
+           asp-route-category="@Model.Kategori"
+           target="_blank">
+            <i class="fas fa-file-pdf mr-1"></i> PDF
+        </a>
+        <a class="btn btn-primary"
+           asp-action="Excel"
+           asp-route-baslangicTarihi="@baslangicRoute"
+           asp-route-bitisTarihi="@bitisRoute"
+           asp-route-category="@Model.Kategori">
+            <i class="fas fa-file-excel mr-1"></i> Excel
+        </a>
+    </div>
+</div>
+
+<div class="card report-filter-card">
+    <div class="card-body">
+        <form asp-action="Index" method="get" class="report-filter-grid">
+            <div class="form-group mb-0">
+                <label>Start Date</label>
+                <input type="date" name="baslangicTarihi" value="@baslangicRoute" class="form-control" />
+            </div>
+            <div class="form-group mb-0">
+                <label>End Date</label>
+                <input type="date" name="bitisTarihi" value="@bitisRoute" class="form-control" />
+            </div>
+            <div class="form-group mb-0">
+                <label>Category</label>
+                <select name="category" class="form-control">
+                    <option value="">All categories</option>
+                    @foreach (var kategori in Model.Kategoriler)
+                    {
+                        if (kategori == Model.Kategori)
+                        {
+                            <option value="@kategori" selected>@kategori</option>
+                        }
+                        else
+                        {
+                            <option value="@kategori">@kategori</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="report-filter-buttons">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter mr-1"></i> Filter
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="fas fa-undo mr-1"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="report-metrics">
+    <div class="report-metric">
+        <span class="metric-icon income"><i class="fas fa-lira-sign"></i></span>
+        <span class="metric-label">Total collections</span>
+        <strong>@DisplayText.Money(Model.ToplamGelir)</strong>
+    </div>
+    <div class="report-metric">
+        <span class="metric-icon pending"><i class="fas fa-clock"></i></span>
+        <span class="metric-label">Pending orders</span>
+        <strong>@Model.BekleyenSiparisSayisi</strong>
+    </div>
+    <div class="report-metric">
+        <span class="metric-icon stock"><i class="fas fa-exclamation-triangle"></i></span>
+        <span class="metric-label">Critical stock</span>
+        <strong>@Model.KritikStokSayisi</strong>
+    </div>
+    <div class="report-metric">
+        <span class="metric-icon debt"><i class="fas fa-file-invoice"></i></span>
+        <span class="metric-label">Unpaid invoices</span>
+        <strong>@DisplayText.Money(Model.OdenmemisFaturaTutari)</strong>
+    </div>
+</div>
+
+<div class="report-chart-grid">
+    <div class="card report-panel chart-tile chart-tile-blue">
+        <div class="card-header">
+            <h3 class="card-title">Collections Flow</h3>
+        </div>
+        <div class="card-body">
+            <canvas id="aylikGelirChart"></canvas>
+        </div>
+    </div>
+    <div class="card report-panel chart-tile chart-tile-green">
+        <div class="card-header">
+            <h3 class="card-title">Customer Ranking</h3>
+        </div>
+        <div class="card-body">
+            <canvas id="musteriChart"></canvas>
+        </div>
+    </div>
+    <div class="card report-panel chart-tile chart-tile-amber">
+        <div class="card-header">
+            <h3 class="card-title">Product Sales Share</h3>
+        </div>
+        <div class="card-body">
+            <canvas id="urunPayChart"></canvas>
+        </div>
+    </div>
+    <div class="card report-panel chart-tile chart-tile-rose">
+        <div class="card-header">
+            <h3 class="card-title">Category Amount</h3>
+        </div>
+        <div class="card-body">
+            <canvas id="kategoriTutarChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-7">
+        <div class="card report-panel">
+            <div class="card-header">
+                <h3 class="card-title">Product Report by Category</h3>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Product</th>
+                            <th>Sold</th>
+                            <th>Amount</th>
+                            <th>Stock</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.KategoriUrunRaporu.Any())
+                        {
+                            @foreach (var urun in Model.KategoriUrunRaporu)
+                            {
+                                <tr>
+                                    <td>@urun.Kategori</td>
+                                    <td>@urun.UrunAdi</td>
+                                    <td>@urun.SatilanAdet</td>
+                                    <td>@DisplayText.Money(urun.Tutar)</td>
+                                    <td><span class="badge badge-light">@urun.MevcutStok</span></td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">No product sales match the selected filters.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card report-panel">
+            <div class="card-header">
+                <h3 class="card-title">Customer Sales Report</h3>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th>Orders</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.MusteriSatisRaporu.Any())
+                        {
+                            @foreach (var musteri in Model.MusteriSatisRaporu.Take(8))
+                            {
+                                <tr>
+                                    <td>@musteri.Musteri</td>
+                                    <td>@musteri.SiparisSayisi</td>
+                                    <td>@DisplayText.Money(musteri.ToplamTutar)</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-4">No customer sales match the selected filters.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card report-panel">
+    <div class="card-header">
+        <h3 class="card-title">Critical Stock List</h3>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th>Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.KritikStoklar.Any())
+                {
+                    @foreach (var stok in Model.KritikStoklar)
+                    {
+                        <tr>
+                            <td>@stok.UrunAdi</td>
+                            <td>@stok.Kategori</td>
+                            <td><span class="badge badge-danger">@stok.StokAdedi</span></td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-4">No products are in critical stock.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        const gelirLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AylikGelirler.Select(x => x.Ay)));
+        const gelirData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AylikGelirler.Select(x => x.Tutar)));
+        const musteriLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MusteriSatisRaporu.Take(5).Select(x => x.Musteri)));
+        const musteriData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MusteriSatisRaporu.Take(5).Select(x => x.SiparisSayisi)));
+        const urunLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.EnCokSatanUrunler.Select(x => x.UrunAdi)));
+        const urunData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.EnCokSatanUrunler.Select(x => x.Miktar)));
+        const categoryAmountLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.KategoriUrunRaporu.GroupBy(x => x.Kategori).Select(x => x.Key)));
+        const categoryAmountData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.KategoriUrunRaporu.GroupBy(x => x.Kategori).Select(x => x.Sum(y => y.Tutar))));
+
+        const money = v => '₺' + Number(v).toLocaleString('en-US');
+
+        new Chart(document.getElementById('aylikGelirChart'), {
+            type: 'bar',
+            data: {
+                labels: gelirLabels,
+                datasets: [{
+                    label: 'Collections',
+                    data: gelirData,
+                    backgroundColor: '#2f80ed',
+                    borderRadius: 7,
+                    maxBarThickness: 34
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => money(ctx.parsed.y) } }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { maxTicksLimit: 4, callback: money } }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('musteriChart'), {
+            type: 'bar',
+            data: {
+                labels: musteriLabels,
+                datasets: [{
+                    data: musteriData,
+                    backgroundColor: ['#13a085', '#2f80ed', '#f59f00', '#d9480f', '#6f42c1'],
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true, ticks: { precision: 0, maxTicksLimit: 4 } },
+                    y: { grid: { display: false }, ticks: { callback: function (v) { const l = this.getLabelForValue(v); return l.length > 16 ? l.slice(0, 15) + '…' : l; } } }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('urunPayChart'), {
+            type: 'doughnut',
+            data: {
+                labels: urunLabels,
+                datasets: [{
+                    data: urunData,
+                    backgroundColor: ['#ffc107', '#2f80ed', '#13a085', '#6f42c1', '#fd7e14'],
+                    borderColor: '#ffffff',
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                cutout: '62%',
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } } }
+            }
+        });
+
+        new Chart(document.getElementById('kategoriTutarChart'), {
+            type: 'bar',
+            data: {
+                labels: categoryAmountLabels,
+                datasets: [{
+                    data: categoryAmountData,
+                    backgroundColor: '#13a085',
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => money(ctx.parsed.x) } }
+                },
+                scales: {
+                    x: { beginAtZero: true, ticks: { maxTicksLimit: 4, callback: money } },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+    </script>
+}

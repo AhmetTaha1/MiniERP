@@ -1,0 +1,222 @@
+﻿@using MiniERP.Entities
+@using MiniERP.Models
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> UserManager
+@{
+    ApplicationUser? currentUser = null;
+    string displayName = User.Identity?.Name ?? "User";
+    string displayRole = "Authorized User";
+
+    if (User.Identity?.IsAuthenticated == true)
+    {
+        currentUser = await UserManager.GetUserAsync(User);
+        if (currentUser != null)
+        {
+            displayName = string.IsNullOrWhiteSpace(currentUser.AdSoyad) ? currentUser.Email ?? displayName : currentUser.AdSoyad;
+            displayRole = string.IsNullOrWhiteSpace(currentUser.Birim) ? displayRole : DisplayText.RoleUnit(currentUser.Birim);
+        }
+    }
+}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MiniERP | @ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="~/css/site.css">
+</head>
+
+<body class="hold-transition sidebar-mini">
+<div class="wrapper">
+
+    @* navbar *@
+    <nav class="main-header navbar navbar-expand">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a data-widget="pushmenu" href="#" class="nav-link"><i class="fas fa-bars"></i></a>
+            </li>
+        </ul>
+        <ul class="navbar-nav ml-auto">
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <li class="nav-item dropdown user-menu">
+                    <a class="nav-link app-user-toggle" data-toggle="dropdown" href="#">
+                        <span class="app-user-avatar">@displayName.Substring(0, 1).ToUpperInvariant()</span>
+                        <span class="app-user-meta">
+                            <strong>@displayName</strong>
+                            <small>@displayRole</small>
+                        </span>
+                        <i class="fas fa-chevron-down ml-2"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right">
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="m-0">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="dropdown-item">
+                                <i class="fas fa-sign-out-alt mr-2"></i> Sign Out
+                            </button>
+                        </form>
+                    </div>
+                </li>
+            }
+            else
+            {
+                <li class="nav-item">
+                    <a href="/Account/Login" class="nav-link">
+                        <i class="fas fa-sign-in-alt"></i> Sign In
+                    </a>
+                </li>
+            }
+        </ul>
+    </nav>
+
+    @* sidebar *@
+    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <a href="/" class="brand-link">
+            <span class="brand-text font-weight-light"><b>Mini</b>ERP</span>
+        </a>
+        <div class="sidebar">
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <div class="user-panel pb-2 d-flex">
+                    <div class="image">
+                        <img src="https://ui-avatars.com/api/?name=@displayName&background=6f42c1&color=fff&size=128"
+                             class="img-circle elevation-2" alt="User avatar">
+                    </div>
+                    <div class="info">
+                        <a href="#" class="d-block">@displayName</a>
+                        <small style="color: rgba(255,255,255,0.5)">@displayRole</small>
+                    </div>
+                </div>
+            }
+            <nav class="mt-2">
+                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview">
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <li class="nav-item">
+                            <a href="/" class="nav-link">
+                                <i class="nav-icon fas fa-tachometer-alt"></i>
+                                <p>Dashboard</p>
+                            </a>
+                        </li>
+                        @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Stok))
+                        {
+                            <li class="nav-item">
+                                <a href="/Urun" class="nav-link">
+                                    <i class="nav-icon fas fa-box"></i>
+                                    <p>Products & Stock</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/Kategori" class="nav-link">
+                                    <i class="nav-icon fas fa-tags"></i>
+                                    <p>Categories</p>
+                                </a>
+                            </li>
+                        }
+                        @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Satis))
+                        {
+                            <li class="nav-item">
+                                <a href="/Musteri" class="nav-link">
+                                    <i class="nav-icon fas fa-users"></i>
+                                    <p>Customers</p>
+                                </a>
+                            </li>
+                        }
+                        @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Satis) || User.IsInRole(AppRoles.Muhasebe) || User.IsInRole(AppRoles.Yonetici))
+                        {
+                            <li class="nav-item">
+                                <a href="/Siparis" class="nav-link">
+                                    <i class="nav-icon fas fa-shopping-cart"></i>
+                                    <p>Orders</p>
+                                </a>
+                            </li>
+                        }
+                        @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Muhasebe))
+                        {
+                            <li class="nav-item">
+                                <a href="/Fatura" class="nav-link">
+                                    <i class="nav-icon fas fa-file-invoice-dollar"></i>
+                                    <p>Invoices</p>
+                                </a>
+                            </li>
+                        }
+                        @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Yonetici))
+                        {
+                            <li class="nav-item">
+                                <a href="/Rapor" class="nav-link">
+                                    <i class="nav-icon fas fa-chart-bar"></i>
+                                    <p>Reports</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/IslemLog" class="nav-link">
+                                    <i class="nav-icon fas fa-history"></i>
+                                    <p>Activity Log</p>
+                                </a>
+                            </li>
+                        }
+                        @if (User.IsInRole(AppRoles.Admin))
+                        {
+                            <li class="nav-item">
+                                <a href="/Kullanici" class="nav-link">
+                                    <i class="nav-icon fas fa-user-shield"></i>
+                                    <p>Users</p>
+                                </a>
+                            </li>
+                        }
+                    }
+                </ul>
+            </nav>
+        </div>
+    </aside>
+
+    @* content *@
+    <div class="content-wrapper">
+        <div class="content-header @(ViewData["HidePageHeader"] as bool? == true ? "page-header-hidden" : "")">
+            <div class="container-fluid">
+                <h1 class="m-0">@ViewData["Title"]</h1>
+            </div>
+        </div>
+        <section class="content">
+            <div class="container-fluid">
+                @RenderBody()
+            </div>
+        </section>
+    </div>
+
+    @* footer *@
+    <footer class="main-footer">
+        <strong>MiniERP</strong> &copy; 2026
+    </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js"></script>
+<script>
+    window.miniErpDataTableLanguage = {
+        search: "Search:",
+        lengthMenu: "Show _MENU_ records",
+        info: "Showing _START_ to _END_ of _TOTAL_ records",
+        infoEmpty: "No records",
+        infoFiltered: "(filtered from _MAX_ records)",
+        zeroRecords: "No matching records found",
+        emptyTable: "No records available",
+        paginate: {
+            first: "First",
+            last: "Last",
+            next: "Next",
+            previous: "Previous"
+        }
+    };
+</script>
+
+@RenderSection("Scripts", required: false)
+
+</body>
+</html>

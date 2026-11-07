@@ -1,0 +1,86 @@
+@model IEnumerable<MiniERP.Entities.IslemLog>
+
+@{
+    ViewData["Title"] = "Activity Log";
+    ViewData["HidePageHeader"] = true;
+    var moduller = (IEnumerable<string>)ViewBag.Moduller;
+    string? seciliModul = ViewBag.SeciliModul as string;
+    DateTime? baslangicTarihi = ViewBag.BaslangicTarihi as DateTime?;
+    DateTime? bitisTarihi = ViewBag.BitisTarihi as DateTime?;
+}
+
+<div class="list-hero">
+    <div>
+        <span class="list-eyebrow">Audit log</span>
+        <h2>Activity Log</h2>
+        <p>Track important create, update, delete, and status changes in the system.</p>
+    </div>
+</div>
+
+<div class="card list-card mb-3">
+    <div class="card-body filter-body">
+        <form method="get" class="filter-grid">
+            <div>
+                <label>Module</label>
+                <select name="modul" class="form-control">
+                    <option value="">All modules</option>
+                    @foreach (var modul in moduller)
+                    {
+                        <option value="@modul" selected="@(modul == seciliModul)">@DisplayText.AuditModule(modul)</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label>Start</label>
+                <input type="date" name="baslangicTarihi" value="@baslangicTarihi?.ToString("yyyy-MM-dd")" class="form-control" />
+            </div>
+            <div>
+                <label>End</label>
+                <input type="date" name="bitisTarihi" value="@bitisTarihi?.ToString("yyyy-MM-dd")" class="form-control" />
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-filter mr-1"></i> Filter</button>
+                <a href="/IslemLog" class="btn btn-outline-secondary"><i class="fas fa-undo mr-1"></i> Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card list-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table app-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>User</th>
+                        <th>Module</th>
+                        <th>Action</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="entity-main">@log.Tarih.ToString("dd.MM.yyyy")</span>
+                                <span class="entity-sub">@log.Tarih.ToString("HH:mm")</span>
+                            </td>
+                            <td>@log.Kullanici</td>
+                            <td><span class="badge badge-light durum-pill">@DisplayText.AuditModule(log.Modul)</span></td>
+                            <td><span class="badge badge-info durum-pill">@DisplayText.AuditAction(log.Islem)</span></td>
+                            <td>@log.Aciklama</td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">No activity records found.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

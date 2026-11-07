@@ -1,0 +1,274 @@
+@model MiniERP.Models.DashboardViewModel
+
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["HidePageHeader"] = true;
+}
+
+<div class="dashboard-hero">
+    <div>
+        <span class="dashboard-eyebrow">MiniERP Operations Panel</span>
+        <h2>Business Control Center</h2>
+        <p>Track revenue, stock, orders, and collections with live data.</p>
+    </div>
+    <div class="dashboard-date">
+        <i class="far fa-calendar-alt"></i>
+        @DateTime.Now.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("en-US"))
+    </div>
+</div>
+
+<div class="dashboard-metrics">
+    <a href="/Rapor" class="metric-card metric-primary">
+        <span class="metric-icon"><i class="fas fa-lira-sign"></i></span>
+        <span class="metric-label">Total Collections</span>
+        <strong>@DisplayText.Money(Model.ToplamGelir)</strong>
+        <small>Total of paid invoices</small>
+    </a>
+    <a href="/Siparis" class="metric-card">
+        <span class="metric-icon"><i class="fas fa-shopping-cart"></i></span>
+        <span class="metric-label">Pending Orders</span>
+        <strong>@Model.BekleyenSiparisSayisi</strong>
+        <small>Today: @Model.BugunkuSiparisSayisi new orders</small>
+    </a>
+    <a href="/Urun" class="metric-card">
+        <span class="metric-icon"><i class="fas fa-exclamation-triangle"></i></span>
+        <span class="metric-label">Critical Stock</span>
+        <strong>@Model.KritikStokSayisi</strong>
+        <small>Products with 5 units or less</small>
+    </a>
+    <a href="/Fatura" class="metric-card">
+        <span class="metric-icon"><i class="fas fa-file-invoice"></i></span>
+        <span class="metric-label">Unpaid Invoices</span>
+        <strong>@Model.OdenmemisFaturaSayisi</strong>
+        <small>@DisplayText.Money(Model.OdenmemisFaturaTutari) outstanding</small>
+    </a>
+</div>
+
+<div class="dashboard-chart-grid">
+    <div class="card dashboard-card chart-tile chart-tile-blue">
+        <div class="card-header">
+            <h3 class="card-title">Collections Trend</h3>
+            <span class="dashboard-card-note">Last 6 months</span>
+        </div>
+        <div class="card-body">
+            <canvas id="salesChart"></canvas>
+        </div>
+    </div>
+    <div class="card dashboard-card chart-tile chart-tile-green">
+        <div class="card-header">
+            <h3 class="card-title">Category Share</h3>
+            <span class="dashboard-card-note">Product</span>
+        </div>
+        <div class="card-body">
+            <canvas id="kategoriChart"></canvas>
+        </div>
+    </div>
+    <div class="card dashboard-card chart-tile chart-tile-amber">
+        <div class="card-header">
+            <h3 class="card-title">Order Status</h3>
+            <span class="dashboard-card-note">Flow</span>
+        </div>
+        <div class="card-body">
+            <canvas id="siparisDurumChart"></canvas>
+        </div>
+    </div>
+    <div class="card dashboard-card chart-tile chart-tile-rose">
+        <div class="card-header">
+            <h3 class="card-title">Stock Health</h3>
+            <span class="dashboard-card-note">Risk</span>
+        </div>
+        <div class="card-body">
+            <canvas id="stockHealthChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-5">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <h3 class="card-title">Latest Orders</h3>
+                <a href="/Siparis" class="dashboard-link">All</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table dashboard-table mb-0">
+                    <tbody>
+                    @foreach (var siparis in Model.SonSiparisler)
+                    {
+                        <tr>
+                            <td>
+                                <strong>#@siparis.Id</strong>
+                                <span>@siparis.Musteri</span>
+                            </td>
+                            <td>@DisplayText.Money(siparis.ToplamTutar)</td>
+                            <td><span class="badge @DisplayText.OrderStatusBadge(siparis.Durum)">@DisplayText.OrderStatus(siparis.Durum)</span></td>
+                        </tr>
+                    }
+                    @if (!Model.SonSiparisler.Any())
+                    {
+                        <tr><td class="text-muted">No orders yet.</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <h3 class="card-title">Critical Stock</h3>
+                <a href="/Urun" class="dashboard-link">Stock</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table dashboard-table mb-0">
+                    <tbody>
+                    @foreach (var stok in Model.KritikStoklar)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@stok.UrunAdi</strong>
+                                <span>@stok.Kategori</span>
+                            </td>
+                            <td><span class="badge badge-danger">@stok.StokAdedi units</span></td>
+                        </tr>
+                    }
+                    @if (!Model.KritikStoklar.Any())
+                    {
+                        <tr><td class="text-muted">No products in critical stock.</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <h3 class="card-title">Collections</h3>
+                <a href="/Fatura" class="dashboard-link">Invoices</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table dashboard-table mb-0">
+                    <tbody>
+                    @foreach (var fatura in Model.OdenmemisFaturalar)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@fatura.FaturaNo</strong>
+                                <span>@fatura.Musteri</span>
+                            </td>
+                            <td>@DisplayText.Money(fatura.ToplamTutar)</td>
+                        </tr>
+                    }
+                    @if (!Model.OdenmemisFaturalar.Any())
+                    {
+                        <tr><td class="text-muted">No unpaid invoices.</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        const salesLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AylikGelirler.Select(x => x.Etiket)));
+        const salesData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AylikGelirler.Select(x => x.Deger)));
+        const kategoriLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.KategoriDagilimi.Select(x => x.Etiket)));
+        const kategoriData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.KategoriDagilimi.Select(x => x.Deger)));
+        const durumLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SiparisDurumDagilimi.Select(x => x.Etiket)));
+        const durumData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SiparisDurumDagilimi.Select(x => x.Deger)));
+        const stockLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.StokSeviyesiDagilimi.Select(x => x.Etiket)));
+        const stockData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.StokSeviyesiDagilimi.Select(x => x.Deger)));
+
+        const legendBottom = { position: 'bottom', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } };
+        const money = v => '₺' + Number(v).toLocaleString('en-US');
+
+        new Chart(document.getElementById('salesChart'), {
+            type: 'bar',
+            data: {
+                labels: salesLabels,
+                datasets: [{
+                    label: 'Collections',
+                    data: salesData,
+                    backgroundColor: '#2f80ed',
+                    borderRadius: 7,
+                    maxBarThickness: 34
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => money(ctx.parsed.y) } }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { maxTicksLimit: 4, callback: money } }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('kategoriChart'), {
+            type: 'doughnut',
+            data: {
+                labels: kategoriLabels,
+                datasets: [{
+                    data: kategoriData,
+                    backgroundColor: ['#2f80ed', '#13a085', '#ffc107', '#6f42c1', '#17a2b8', '#fd7e14'],
+                    borderColor: '#ffffff',
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                cutout: '62%',
+                plugins: { legend: legendBottom }
+            }
+        });
+
+        const statusColors = { 'Pending': '#f59f00', 'Preparing': '#17a2b8', 'Completed': '#13a085', 'Canceled': '#d9480f' };
+        new Chart(document.getElementById('siparisDurumChart'), {
+            type: 'doughnut',
+            data: {
+                labels: durumLabels,
+                datasets: [{
+                    data: durumData,
+                    backgroundColor: durumLabels.map(l => statusColors[l] || '#adb5bd'),
+                    borderColor: '#ffffff',
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                cutout: '62%',
+                plugins: { legend: legendBottom }
+            }
+        });
+
+        new Chart(document.getElementById('stockHealthChart'), {
+            type: 'doughnut',
+            data: {
+                labels: stockLabels,
+                datasets: [{
+                    data: stockData,
+                    backgroundColor: ['#13a085', '#d9480f'],
+                    borderColor: '#ffffff',
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                cutout: '62%',
+                plugins: { legend: legendBottom }
+            }
+        });
+    </script>
+}

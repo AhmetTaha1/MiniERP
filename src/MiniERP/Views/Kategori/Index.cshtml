@@ -1,0 +1,160 @@
+@model IEnumerable<MiniERP.Models.KategoriListItemViewModel>
+
+@{
+    ViewData["Title"] = "Categories";
+    ViewData["HidePageHeader"] = true;
+}
+
+<div class="list-hero">
+    <div>
+        <span class="list-eyebrow">Category management</span>
+        <h2>Product Categories</h2>
+        <p>Manage the category list used on the product form; categories with product history are protected and can be renamed instead.</p>
+    </div>
+    <a href="/Urun" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left mr-1"></i> Back to Products
+    </a>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="card list-card mb-3">
+    <div class="card-body category-create-body">
+        <form asp-action="Create" method="post" class="category-create-form">
+            @Html.AntiForgeryToken()
+            <div>
+                <label>New Category</label>
+                <input type="text" name="ad" class="form-control" maxlength="100" placeholder="e.g. Appliances" required />
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-plus mr-1"></i> Add
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card list-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table app-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Active Products</th>
+                        <th>Total Product History</th>
+                        <th>Status</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var kategori in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="entity-main">@kategori.Ad</span>
+                                <span class="entity-sub">#@kategori.Id</span>
+                            </td>
+                            <td>@kategori.AktifUrunSayisi</td>
+                            <td>@kategori.ToplamUrunSayisi</td>
+                            <td>
+                                @if (kategori.Silinebilir)
+                                {
+                                    <span class="badge badge-success durum-pill">Deletable</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-warning durum-pill">Has product history</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <form asp-action="Rename" method="post" class="rename-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@kategori.Id" />
+                                        <input type="hidden" name="ad" value="@kategori.Ad" />
+                                        <button type="submit" class="btn btn-secondary icon-btn" title="Rename">
+                                            <i class="fas fa-pen"></i>
+                                        </button>
+                                    </form>
+                                    <form asp-action="Delete" method="post" class="delete-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@kategori.Id" />
+                                        <button type="submit"
+                                                class="btn btn-danger icon-btn"
+                                                title="Delete"
+                                                @(kategori.Silinebilir ? "" : "disabled")>
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">No categories yet.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.querySelectorAll('.rename-form').forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            var input = form.querySelector('input[name="ad"]');
+
+            Swal.fire({
+                title: 'Rename category',
+                input: 'text',
+                inputValue: input.value,
+                inputAttributes: { maxlength: 100 },
+                showCancelButton: true,
+                confirmButtonText: 'Save',
+                cancelButtonText: 'Cancel',
+                inputValidator: function(value) {
+                    if (!value || !value.trim()) { return 'Category name is required'; }
+                }
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    input.value = result.value.trim();
+                    form.submit();
+                }
+            });
+        });
+    });
+
+    document.querySelectorAll('.delete-form').forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            Swal.fire({
+                title: 'Delete category?',
+                text: 'The category will be permanently removed from the list.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+</script>
+}

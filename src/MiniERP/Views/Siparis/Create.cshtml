@@ -1,0 +1,233 @@
+@model MiniERP.Models.SiparisViewModel
+
+@{
+    ViewData["Title"] = "New Order";
+    ViewData["HidePageHeader"] = true;
+}
+
+<div class="form-hero">
+    <div>
+        <span class="list-eyebrow">Sales operations</span>
+        <h2>Create New Order</h2>
+        <p>Select the customer, add product lines, and save the order with stock validation.</p>
+    </div>
+    <a href="/Siparis" class="btn btn-outline-secondary"><i class="fas fa-arrow-left mr-1"></i> Back</a>
+</div>
+
+<div class="card form-card">
+    <div class="card-body">
+        <form id="siparisForm" method="post" action="/Siparis/Create">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="All" class="text-danger"></div>
+
+            <div class="form-group full">
+                <label>Customer</label>
+                <select id="musteriSelect" name="MusteriId" class="form-control" required
+                        oninvalid="this.setCustomValidity('Please select a customer from the list.')"
+                        onchange="this.setCustomValidity('')">
+                    <option value="">-- Select Customer --</option>
+                    @foreach (var musteri in ViewBag.Musteriler)
+                    {
+                        <option value="@musteri.Id">@musteri.AdSoyad</option>
+                    }
+                </select>
+            </div>
+
+            <h5 class="detail-section-title mt-4">Product Lines</h5>
+
+            <table class="table app-table" id="urunTable">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Unit Price</th>
+                        <th>Quantity</th>
+                        <th>Subtotal</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="kalemler">
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="text-right"><strong>Total:</strong></td>
+                        <td><strong id="genelToplam">₺0</strong></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <button type="button" class="btn btn-outline-primary mb-3" onclick="satirAdd()">
+                <i class="fas fa-plus mr-1"></i> Add Product
+            </button>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save mr-1"></i> Save Order
+                </button>
+                <a href="/Siparis" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left mr-1"></i> Back
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var urunler = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                                            ((IEnumerable<MiniERP.Entities.Urun>)ViewBag.Urunler).Select(u => new { u.Id, u.Ad, u.Fiyat, u.StokAdedi })
+                    ));
+
+        var satirIndex = 0;
+
+        // Product names are user-provided data: always escape before building HTML.
+        function escapeHtml(value) {
+            return String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        function satirAdd() {
+            var options = urunler.map(u =>
+                `<option value="${u.Id}" data-fiyat="${u.Fiyat}" data-stok="${u.StokAdedi}">${escapeHtml(u.Ad)} (Stock: ${u.StokAdedi})</option>`
+            ).join('');
+
+            var satir = `
+                    <tr>
+                        <td>
+                            <select name="Kalemler[${satirIndex}].UrunId" class="form-control urun-select" onchange="fiyatGuncelle(this)">
+                                <option value="">-- Select Product --</option>
+                                ${options}
+                            </select>
+                        </td>
+                        <td><span class="birim-fiyat">₺0</span></td>
+                        <td>
+                            <input type="number" name="Kalemler[${satirIndex}].Miktar"
+                                   class="form-control miktar-input" value="1" min="1"
+                                   oninput="miktarKontrolEt(this); toplamGuncelle()"/>
+                            <small class="text-danger stok-uyari d-none"></small>
+                        </td>
+                        <td><span class="ara-toplam">₺0</span></td>
+                        <td>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="satirDelete(this)">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+
+            document.getElementById('kalemler').insertAdjacentHTML('beforeend', satir);
+            satirIndex++;
+        }
+
+        function fiyatGuncelle(select) {
+            var option = select.options[select.selectedIndex];
+            var fiyat = option.dataset.fiyat || 0;
+            var stok = option.dataset.stok || '';
+            var row = select.closest('tr');
+            var miktarInput = row.querySelector('.miktar-input');
+
+            if (miktarInput) {
+                if (select.value) {
+                    miktarInput.dataset.stok = stok;
+                    miktarInput.dataset.urunAdi = option.textContent.split(' (Stock:')[0];
+                } else {
+                    delete miktarInput.dataset.stok;
+                    delete miktarInput.dataset.urunAdi;
+                }
+                miktarKontrolEt(miktarInput);
+            }
+
+            row.querySelector('.birim-fiyat').textContent = '₺' + fiyat;
+            toplamGuncelle();
+        }
+
+        function miktarKontrolEt(input) {
+            var stok = parseInt(input.dataset.stok || 0);
+            var value = parseInt(input.value || 0);
+            var row = input.closest('tr');
+            var uyari = row.querySelector('.stok-uyari');
+
+            if (value < 1) {
+                input.classList.add('is-invalid');
+                uyari.textContent = 'Quantity must be 1 or greater.';
+                uyari.classList.remove('d-none');
+                return false;
+            }
+
+            if (!Number.isNaN(stok) && stok >= 0 && value > stok) {
+                input.classList.add('is-invalid');
+                uyari.textContent = `Insufficient stock. ${stok} units are available.`;
+                uyari.classList.remove('d-none');
+                return false;
+            }
+
+            input.classList.remove('is-invalid');
+            uyari.textContent = '';
+            uyari.classList.add('d-none');
+            return true;
+        }
+
+        function toplamGuncelle() {
+            var toplam = 0;
+            document.querySelectorAll('#kalemler tr').forEach(function (row) {
+                var select = row.querySelector('.urun-select');
+                var miktar = row.querySelector('.miktar-input');
+                if (select && miktar) {
+                    var option = select.options[select.selectedIndex];
+                    var fiyat = parseFloat(option.dataset.fiyat || 0);
+                    var adet = parseInt(miktar.value || 1);
+                    var ara = fiyat * adet;
+                    row.querySelector('.ara-toplam').textContent = '₺' + ara.toFixed(2);
+                    toplam += ara;
+                }
+            });
+            document.getElementById('genelToplam').textContent = '₺' + toplam.toFixed(2);
+        }
+
+        function satirDelete(btn) {
+            btn.closest('tr').remove();
+            toplamGuncelle();
+        }
+
+        document.getElementById('siparisForm').addEventListener('submit', function (event) {
+            var musteri = document.getElementById('musteriSelect');
+            if (!musteri.value) {
+                event.preventDefault();
+                Swal.fire('Missing information', 'Please select a customer.', 'warning');
+                musteri.focus();
+                return;
+            }
+
+            var satirlar = document.querySelectorAll('#kalemler tr');
+            if (satirlar.length === 0) {
+                event.preventDefault();
+                Swal.fire('Missing information', 'Please add at least one product.', 'warning');
+                return;
+            }
+
+            for (var row of satirlar) {
+                var select = row.querySelector('.urun-select');
+                var miktar = row.querySelector('.miktar-input');
+
+                if (!select.value) {
+                    event.preventDefault();
+                    Swal.fire('Missing information', 'Please select a product on every row.', 'warning');
+                    select.focus();
+                    return;
+                }
+
+                if (!miktarKontrolEt(miktar)) {
+                    event.preventDefault();
+                    var stok = parseInt(miktar.dataset.stok || 0);
+                    var value = parseInt(miktar.value || 0);
+                    var urunAdi = miktar.dataset.urunAdi || 'Selected product';
+                var mesaj = value < 1
+                    ? 'Order quantity must be 1 or greater.'
+                    : `Insufficient stock for ${escapeHtml(urunAdi)}. ${stok} units are available.`;
+
+                    Swal.fire('Stock validation', mesaj, 'warning');
+                    miktar.focus();
+                    return;
+                }
+            }
+        });
+    </script>
+}

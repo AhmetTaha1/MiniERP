@@ -1,0 +1,162 @@
+@model IEnumerable<MiniERP.Entities.Siparis>
+
+@{
+    ViewData["Title"] = "Orders";
+    ViewData["HidePageHeader"] = true;
+    var seciliDurum = ViewBag.Durum as SiparisDurumu?;
+    DateTime? baslangicTarihi = ViewBag.BaslangicTarihi as DateTime?;
+    DateTime? bitisTarihi = ViewBag.BitisTarihi as DateTime?;
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="list-hero">
+    <div>
+        <span class="list-eyebrow">Sales operations</span>
+        <h2>Orders</h2>
+        <p>Track new orders, preparation status, and completed sales in current order.</p>
+    </div>
+    @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Satis))
+    {
+        <a href="/Siparis/Create" class="btn btn-primary">
+            <i class="fas fa-plus mr-1"></i> New Order
+        </a>
+    }
+</div>
+
+<div class="card list-card mb-3">
+    <div class="card-body filter-body">
+        <form method="get" class="filter-grid">
+            <div>
+                <label>Status</label>
+                <select name="durum" class="form-control">
+                    <option value="">All statuses</option>
+                    @foreach (var durum in Enum.GetValues<SiparisDurumu>())
+                    {
+                        <option value="@durum" selected="@(durum == seciliDurum)">@DisplayText.OrderStatus(durum)</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label>Start</label>
+                <input type="date" name="baslangicTarihi" value="@baslangicTarihi?.ToString("yyyy-MM-dd")" class="form-control" />
+            </div>
+            <div>
+                <label>End</label>
+                <input type="date" name="bitisTarihi" value="@bitisTarihi?.ToString("yyyy-MM-dd")" class="form-control" />
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-filter mr-1"></i> Filter</button>
+                <a href="/Siparis" class="btn btn-outline-secondary"><i class="fas fa-undo mr-1"></i> Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card list-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="siparisTable" class="table app-table">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var siparis in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="entity-main">#@siparis.Id</span>
+                                <span class="entity-sub">Order record</span>
+                            </td>
+                            <td>@siparis.Musteri.AdSoyad</td>
+                            <td>@siparis.SiparisTarihi.ToString("dd.MM.yyyy HH:mm")</td>
+                            <td>@DisplayText.Money(siparis.ToplamTutar)</td>
+                            <td>
+                                <span class="badge @DisplayText.OrderStatusBadge(siparis.Durum) durum-pill">@DisplayText.OrderStatus(siparis.Durum)</span>
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <a href="/Siparis/Detay/@siparis.Id" class="btn btn-info icon-btn" title="Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    @if (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Satis))
+                                    {
+                                        <a href="/Siparis/Durum/@siparis.Id" class="btn btn-secondary icon-btn" title="Status">
+                                            <i class="fas fa-exchange-alt"></i>
+                                        </a>
+                                        @if (siparis.Durum != SiparisDurumu.Tamamlandi && siparis.Fatura == null)
+                                        {
+                                            <form asp-action="Delete" method="post" class="delete-form">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@siparis.Id" />
+                                                <button type="submit" class="btn btn-danger icon-btn" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <button type="button" class="btn btn-light icon-btn" title="Invoiced or completed orders cannot be deleted" disabled>
+                                                <i class="fas fa-lock"></i>
+                                            </button>
+                                        }
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css">
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap4.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#siparisTable').DataTable({
+            order: [],
+            language: window.miniErpDataTableLanguage
+        });
+    });
+
+    document.querySelectorAll('.delete-form').forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'This order will be permanently deleted.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+</script>
+}

@@ -1,0 +1,71 @@
+@model MiniERP.Entities.Siparis
+
+@{
+    ViewData["Title"] = "Order Status";
+    ViewData["HidePageHeader"] = true;
+    var durumlar = (IEnumerable<SiparisDurumu>)ViewBag.Durumlar;
+    string? tamamlanmaUyarisi = ViewBag.TamamlanmaUyarisi as string;
+}
+
+<div class="form-hero">
+    <div>
+        <span class="list-eyebrow">Order management</span>
+        <h2>Order #@Model.Id Status</h2>
+        <p>Manage the status transition for @Model.Musteri.AdSoyad's order.</p>
+    </div>
+    <a href="/Siparis/Detay/@Model.Id" class="btn btn-outline-secondary"><i class="fas fa-arrow-left mr-1"></i> Back</a>
+</div>
+
+<div class="detail-summary-grid">
+    <div class="detail-summary-card">
+        <span>Customer</span>
+        <strong>@Model.Musteri.AdSoyad</strong>
+        <small>Order owner</small>
+    </div>
+    <div class="detail-summary-card">
+        <span>Current Status</span>
+        <strong>@DisplayText.OrderStatus(Model.Durum)</strong>
+        <small>Current order step</small>
+    </div>
+    <div class="detail-summary-card">
+        <span>Total</span>
+        <strong>@DisplayText.Money(Model.ToplamTutar)</strong>
+        <small>Order amount</small>
+    </div>
+    <div class="detail-summary-card">
+        <span>Date</span>
+        <strong>@Model.SiparisTarihi.ToString("dd.MM.yyyy")</strong>
+        <small>@Model.SiparisTarihi.ToString("HH:mm")</small>
+    </div>
+</div>
+
+<div class="card form-card">
+    <div class="card-body">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        @if (!string.IsNullOrWhiteSpace(tamamlanmaUyarisi) && Model.Durum == SiparisDurumu.Hazirlaniyor)
+        {
+            <div class="alert alert-warning">
+                <i class="fas fa-info-circle mr-1"></i> @tamamlanmaUyarisi
+            </div>
+        }
+        <form asp-action="Durum" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+            <div class="form-grid">
+                <div class="full">
+                    <label for="durum">New Status</label>
+                    <select id="durum" name="durum" class="form-control">
+                        @foreach (var durum in durumlar)
+                        {
+                            <option value="@durum" selected="@(durum == Model.Durum)">@DisplayText.OrderStatus(durum)</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Update Status</button>
+                <a href="/Siparis/Detay/@Model.Id" class="btn btn-outline-secondary"><i class="fas fa-arrow-left mr-1"></i> Back</a>
+            </div>
+        </form>
+    </div>
+</div>

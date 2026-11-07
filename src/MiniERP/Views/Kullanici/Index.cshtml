@@ -1,0 +1,106 @@
+@model IEnumerable<MiniERP.Models.KullaniciListItemViewModel>
+
+@{
+    ViewData["Title"] = "Users";
+    ViewData["HidePageHeader"] = true;
+}
+
+<div class="list-hero">
+    <div>
+        <span class="list-eyebrow">Authorization</span>
+        <h2>Users</h2>
+        <p>Manage system users, authorization units, and admin protection here.</p>
+    </div>
+    <a href="/Kullanici/Create" class="btn btn-primary">
+        <i class="fas fa-plus mr-1"></i> New User
+    </a>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<div class="card list-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table app-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Authorization Unit</th>
+                        <th>System Role</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var kullanici in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="entity-main">@kullanici.AdSoyad</span>
+                                <span class="entity-sub">@(kullanici.SistemAdmini ? "System administrator" : "Authorized user")</span>
+                            </td>
+                            <td>@kullanici.Email</td>
+                            <td><span class="badge badge-light durum-pill">@DisplayText.RoleUnit(kullanici.Birim)</span></td>
+                            <td>
+                                <span class="badge @(kullanici.SistemAdmini ? "badge-dark" : "badge-info") durum-pill">@DisplayText.RoleUnit(kullanici.Yetki)</span>
+                                @if (kullanici.SistemAdmini)
+                                {
+                                    <span class="badge badge-warning durum-pill ml-1">Protected</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    @if (!kullanici.SistemAdmini)
+                                    {
+                                        <a href="/Kullanici/Edit/@kullanici.Id" class="btn btn-warning icon-btn" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form asp-action="Delete" method="post" class="delete-form">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@kullanici.Id" />
+                                            <button type="submit" class="btn btn-danger icon-btn" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Locked</span>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.querySelectorAll('.delete-form').forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'This user will be permanently deleted.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+</script>
+}

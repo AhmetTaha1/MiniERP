@@ -1,0 +1,65 @@
+@model MiniERP.Models.UrunFormViewModel
+
+@{
+    ViewData["Title"] = "New Product";
+    ViewData["HidePageHeader"] = true;
+    var kategoriler = (IEnumerable<string>)ViewBag.Kategoriler;
+}
+
+<div class="form-hero">
+    <div>
+        <span class="list-eyebrow">Stock management</span>
+        <h2>Add New Product</h2>
+        <p>Enter product details, category, sale price, and starting stock quantity.</p>
+    </div>
+    <a href="/Urun" class="btn btn-outline-secondary"><i class="fas fa-arrow-left mr-1"></i> Back</a>
+</div>
+
+<div class="card form-card">
+    <div class="card-body">
+        <form asp-action="Create" method="post">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <div class="form-grid">
+                <div>
+                    <label asp-for="Ad">Product Name</label>
+                    <input asp-for="Ad" class="form-control" placeholder="Enter product name" />
+                    <span asp-validation-for="Ad" class="text-danger"></span>
+                </div>
+                <div>
+                    <label asp-for="Kategori">Category</label>
+                    <select asp-for="Kategori" class="form-control">
+                        <option value="">-- Select Category --</option>
+                        @foreach (var kategori in kategoriler)
+                        {
+                            <option value="@kategori">@kategori</option>
+                        }
+                    </select>
+                    <span asp-validation-for="Kategori" class="text-danger"></span>
+                </div>
+                <div class="full">
+                    <label asp-for="YeniKategori">New Category</label>
+                    <input asp-for="YeniKategori" class="form-control" placeholder="Enter a new category name if it is not in the list" />
+                    <small class="form-text text-muted">If you enter a new category, the product will be saved under it and the category will be added to the list.</small>
+                </div>
+                <div>
+                    <label asp-for="Fiyat">Price</label>
+                    <input asp-for="Fiyat" class="form-control" placeholder="0.00" />
+                    <span asp-validation-for="Fiyat" class="text-danger"></span>
+                </div>
+                <div>
+                    <label asp-for="StokAdedi">Stock Quantity</label>
+                    <input asp-for="StokAdedi" class="form-control" placeholder="0" />
+                    <span asp-validation-for="StokAdedi" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Save</button>
+                <a href="/Urun" class="btn btn-outline-secondary"><i class="fas fa-arrow-left mr-1"></i> Back</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+}

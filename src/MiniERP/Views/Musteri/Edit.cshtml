@@ -1,0 +1,60 @@
+@model MiniERP.Entities.Musteri
+
+@{
+    ViewData["Title"] = "Edit Customer";
+    ViewData["HidePageHeader"] = true;
+}
+
+<div class="form-hero">
+    <div>
+        <span class="list-eyebrow">Customer management</span>
+        <h2>Edit Customer</h2>
+        <p>Update the customer's person/company, contact, and address information.</p>
+    </div>
+    <a href="/Musteri" class="btn btn-outline-secondary"><i class="fas fa-arrow-left mr-1"></i> Back</a>
+</div>
+
+<div class="card form-card">
+    <div class="card-body">
+        <form asp-action="Edit" method="post">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <input asp-for="Id" type="hidden" />
+            <input asp-for="OlusturmaTarihi" type="hidden" />
+            <div class="form-grid">
+                <div>
+                    <label asp-for="Ad">Customer / Company Name</label>
+                    <input asp-for="Ad" class="form-control" />
+                    <span asp-validation-for="Ad" class="text-danger"></span>
+                </div>
+                <div>
+                    <label asp-for="Soyad">Contact Last Name</label>
+                    <input asp-for="Soyad" class="form-control" placeholder="Leave blank for company customers" />
+                    <span asp-validation-for="Soyad" class="text-danger"></span>
+                </div>
+                <div>
+                    <label asp-for="Email"></label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+                <div>
+                    <label asp-for="Telefon">Phone</label>
+                    <input asp-for="Telefon" class="form-control" />
+                    <span asp-validation-for="Telefon" class="text-danger"></span>
+                </div>
+                <div class="full">
+                    <label asp-for="Adres">Address</label>
+                    <textarea asp-for="Adres" class="form-control" rows="3"></textarea>
+                    <span asp-validation-for="Adres" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-warning"><i class="fas fa-save mr-1"></i> Update</button>
+                <a href="/Musteri" class="btn btn-outline-secondary"><i class="fas fa-arrow-left mr-1"></i> Back</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,62 @@
+@model MiniERP.Models.KullaniciCreateViewModel
+
+@{
+    ViewData["Title"] = "New User";
+    ViewData["HidePageHeader"] = true;
+    var yetkiBirimleri = (IEnumerable<string>)ViewBag.YetkiBirimleri;
+}
+
+<div class="form-hero">
+    <div>
+        <span class="list-eyebrow">Authorization</span>
+        <h2>Create New User</h2>
+        <p>Create a user account and assign the role automatically by selecting an authorization unit.</p>
+    </div>
+    <a href="/Kullanici" class="btn btn-outline-secondary"><i class="fas fa-arrow-left mr-1"></i> Back</a>
+</div>
+
+<div class="card form-card">
+    <div class="card-body">
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <div class="form-grid">
+                <div>
+                    <label asp-for="AdSoyad">Full Name</label>
+                    <input asp-for="AdSoyad" class="form-control" />
+                    <span asp-validation-for="AdSoyad" class="text-danger"></span>
+                </div>
+                <div>
+                    <label asp-for="Email"></label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+                <div>
+                    <label asp-for="Password">Password</label>
+                    <input asp-for="Password" class="form-control" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+                <div>
+                    <label asp-for="Birim">Authorization Unit</label>
+                    <select asp-for="Birim" class="form-control">
+                        <option value="">-- Select Authorization Unit --</option>
+                        @foreach (var birim in yetkiBirimleri)
+                        {
+                            <option value="@birim">@DisplayText.RoleUnit(birim)</option>
+                        }
+                    </select>
+                    <span asp-validation-for="Birim" class="text-danger"></span>
+                    <small class="form-text text-muted">The system role is assigned automatically based on the selected unit.</small>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Save</button>
+                <a href="/Kullanici" class="btn btn-outline-secondary"><i class="fas fa-arrow-left mr-1"></i> Back</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
