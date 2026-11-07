@@ -13,7 +13,4 @@ public class SeedOptions
     public string AdminPassword { get; set; } = string.Empty;
 
     public string DemoUserPassword { get; set; } = string.Empty;
-
-    /// <summary>Shows the demo credentials on the login page (development only).</summary>
-    public bool ShowDemoCredentials { get; set; }
 }

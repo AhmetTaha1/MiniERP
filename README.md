@@ -83,7 +83,7 @@ Pending migrations are applied automatically at startup. To turn this off, set `
 
 ### Demo accounts
 
-> These accounts exist **only for local and demo use**. They are created from configuration (`Seed:*`) and are shown on the login page in Development. In any real deployment, set `Seed__AdminPassword` with an environment variable or a secret store, and set `Seed__DemoUsers=false`.
+> These accounts exist **only for local and demo use**. They are created from configuration (`Seed:*`). In any real deployment, set `Seed__AdminPassword` with an environment variable or a secret store, and set `Seed__DemoUsers=false`.
 
 | Role | Email | Password |
 | --- | --- | --- |

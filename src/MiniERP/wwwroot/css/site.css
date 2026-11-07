@@ -1164,21 +1164,3 @@ body {
 .validation-summary-valid {
     display: none;
 }
-
-/* Demo credentials box on the login page (development only) */
-.demo-credentials {
-    background: #f4f6fb;
-    border: 1px solid #dfe3ee;
-    border-left: 4px solid #2d3561;
-    border-radius: 10px;
-    padding: 14px 16px;
-    font-size: 0.85rem;
-    color: #3a4157;
-}
-
-.demo-credentials code {
-    color: #1a1f3c;
-    background: #e6e9f2;
-    padding: 1px 5px;
-    border-radius: 4px;
-}

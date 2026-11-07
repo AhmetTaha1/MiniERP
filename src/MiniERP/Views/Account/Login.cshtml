@@ -1,6 +1,4 @@
 @model MiniERP.Models.LoginViewModel
-@using Microsoft.Extensions.Options
-@inject IOptions<SeedOptions> SeedOptions
 
 @{
     Layout = "_AuthLayout";
@@ -68,15 +66,6 @@
                     <i class="fas fa-sign-in-alt"></i> Sign In
                 </button>
             </form>
-
-            @if (SeedOptions.Value.ShowDemoCredentials)
-            {
-                <div class="demo-credentials mt-4">
-                    <strong><i class="fas fa-info-circle mr-1"></i> Demo accounts</strong>
-                    <div class="mt-2">Admin: <code>@SeedOptions.Value.AdminEmail</code> / <code>@SeedOptions.Value.AdminPassword</code></div>
-                    <div>Sales / Stock / Accounting / Manager: <code>sales@minierp.com</code>, <code>stock@minierp.com</code>, <code>accounting@minierp.com</code>, <code>manager@minierp.com</code> / <code>@SeedOptions.Value.DemoUserPassword</code></div>
-                </div>
-            }
         </div>
     </section>
 </main>
